@@ -1,43 +1,53 @@
-import Decimal from 'break_eternity.js';
-import {modInfo} from 'mod';
-import {base64ToString, stringToBase64} from 'uint8array-extras';
-import {SaveFileError} from 'utils/errors';
+import Decimal from "break_eternity.js";
+import { modInfo } from "mod";
+import { Intervals } from "technical/intervals";
+import { base64ToString, stringToBase64 } from "uint8array-extras";
+import { SaveFileError } from "utils/errors";
 
 // ************ Save stuff ************
 
-export let player: Record<string | number, unknown>;
-
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const GameSave = {
   checkPlayerObject(save: Record<string | number, unknown>): void {
-    if (!Boolean(save.points)) {
-      throw new SaveFileError('Save file does not have a main "points" property');
+    if (!save.points) {
+      throw new SaveFileError("Save file does not have a main \"points\" property");
     }
 
-    const invalidProps: string[] = [];
-    function checkNaN(obj: Record<string | number, unknown> | any[], path: string) {
+    const invalidProperties: string[] = [];
+    function checkNaN(object: Record<string | number, unknown> | unknown[], path: string) {
       let hasNaN = false;
-      for (const key in obj) {
-        const prop = obj[key];
-        let thisNaN;
-        if (prop === null || prop === undefined) {
+      for (const key in object) {
+        if (!Object.hasOwn(object, key)) {
           continue;
-        } else if (Array.isArray(prop) || (typeof prop === 'object' && !(prop instanceof Decimal))) {
-          checkNaN(prop, `${path}.${key}`);
-        } else if (Number.isNaN(prop)) {
+        }
+
+        const property = object[key];
+        if (property === null || property === undefined) {
+          continue;
+        } else if (Array.isArray(property)) {
+          checkNaN(property, `${path}.${key}`);
+        } else if (Number.isNaN(property)) {
           hasNaN = true;
-          invalidProps.push(`${path}.${key}`)
-        } else if (prop instanceof Decimal && prop.toString() === 'NaN') {
+          invalidProperties.push(`${path}.${key}`);
+        } else if (property instanceof Decimal && property.toString() === "NaN") {
           hasNaN = true;
-          invalidProps.push(`${path}.${key}`)
+          invalidProperties.push(`${path}.${key}`);
+        } else if (typeof property === "object") {
+          checkNaN(property as Record<string | number, unknown>, `${path}.${key}`);
         }
       }
+
       return hasNaN;
     }
-    checkNaN(save, 'player');
 
-    if (invalidProps.length === 0) return;
-    throw new SaveFileError(`${invalidProps.length > 1 ? 'NaN player properties' : "NaN player property"} found:
-      ${invalidProps.join(", ")}`);
+    checkNaN(save, "player");
+
+    if (invalidProperties.length === 0) {
+      return;
+    }
+
+    throw new SaveFileError(`${invalidProperties.length > 1 ? "NaN player properties" : "NaN player property"} found:
+      ${invalidProperties.join(", ")}`);
   },
 
   canSave(): boolean {
@@ -45,30 +55,37 @@ export const GameSave = {
   },
 
   save(): void {
-    if (!this.canSave()) return;
+    if (!this.canSave()) {
+      return;
+    }
+
     try {
-      this.checkPlayerObject(player)
-    } catch (error: SaveFileError) {
+      this.checkPlayerObject(player);
+    } catch (error: any) {
+      // eslint-disable-next-line no-alert
       alert(`Your save is invalid for ${error.message}, that means you can't save.`);
     }
+
     localStorage.setItem(modInfo.id, stringToBase64(JSON.stringify(player)));
   },
 
-  loadPlayer(playerObject: Record<string | number, unknown>): void {
+  applyPlayer(playerObject: Record<string | number, any>) {
     try {
       this.checkPlayerObject(playerObject);
     } catch (error) {
-      console.error('Savefile was invalid for:')
+      console.error("Savefile was invalid for:");
       console.error(error);
-      console.warn('Resetting the save!');
-      player = this.getDefaultSave();
-      player.lastUpdate = Date.now();
+      console.warn("Resetting the save!");
+      playerObject = this.getDefaultSave();
+      playerObject.lastUpdate = Date.now();
     }
+
+    return playerObject;
   },
 
   resetSave(): void {
-    this.loadPlayer(this.getDefaultSave())
-    this.save()
+    player = this.applyPlayer(this.getDefaultSave());
+    this.save();
   },
 
   getDefaultSave() {
@@ -85,68 +102,28 @@ export const GameSave = {
       ui: {
         currentTab: "",
       },
-      points: new Decimal(0),
     };
     return defaultStart;
   },
-}
 
-function guardFromNaNValues(object: any) {
-  function isObject(object: unknown) {
-    return object !== null && typeof object === "object" && !(object instanceof Decimal);
-  }
-
-  for (const key in object) {
-    if (!Object.hasOwn(object, key)) continue;
-
-    let value = object[key];
-    if (isObject(value)) {
-      guardFromNaNValues(value);
-      continue;
+  load() {
+    const playerStorage = localStorage.getItem(modInfo.id);
+    // First play, load the default save.
+    if (playerStorage === null) {
+      player = this.applyPlayer(this.getDefaultSave());
+      // TempStore.setup();
+      Intervals.startAll();
+    } else {
+      // Not our first play, decode and import.
+      let decodedPlayer = JSON.parse(base64ToString(playerStorage));
     }
+  },
+};
 
-    if (typeof value === "number") {
-      Object.defineProperty(object, key, {
-        enumerable: true,
-        configurable: true,
-        get: () => value,
-        set: function guardedSetter(newValue) {
-          if (newValue === null || newValue === undefined) {
-            throw new TypeError("null/undefined player property assignment");
-          }
-          if (typeof newValue !== "number") {
-            throw new TypeError("Non-Number assignment to Number player property");
-          }
-          if (!Number.isFinite(newValue)) {
-            throw new TypeError("NaN/non-finite player property assignment");
-          }
-          value = newValue;
-        }
-      });
-    }
+// eslint-disable-next-line import/no-mutable-exports
+export let player = GameSave.applyPlayer(GameSave.getDefaultSave());
 
-    if (value instanceof Decimal) {
-      Object.defineProperty(object, key, {
-        enumerable: true,
-        configurable: true,
-        get: () => value,
-        set: function guardedSetter(newValue) {
-          if (newValue === null || newValue === undefined) {
-            throw new Error("null/undefined player property assignment");
-          }
-          if (!(newValue instanceof Decimal)) {
-            throw new Error("Non-Decimal assignment to Decimal player property");
-          }
-          if (!isFinite(newValue.mag) || !isFinite(newValue.sign) || !isFinite(newValue.layer)) {
-            throw new Error("NaN/non-finite player property assignment");
-          }
-          value = newValue;
-        }
-      });
-    }
-  }
-}
-
+/* Legacy code that is getting ported
 function getStartPlayer(): Record<string | number, unknown> {
   const playerdata = startPlayerBase();
 
@@ -179,7 +156,7 @@ function getStartPlayer(): Record<string | number, unknown> {
         if (Object.hasOwn(layers[layer].microtabs, item)) {
           continue;
         }
-        
+
         playerdata.subtabs[layer][item] = Object.keys(layers[layer].microtabs[item])[0];
       }
     }
@@ -485,3 +462,4 @@ window.addEventListener('beforeunload', () => {
     save();
   }
 });
+*/

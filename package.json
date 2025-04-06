@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "xo --fix && "
+    "build": "xo --fix && vite build"
   },
   "dependencies": {
     "break_eternity.js": "^2.1.1",
-    "uint8array-extras": "^1.4.0"
+    "uint8array-extras": "^1.4.0",
+    "vite": "^6.2.5",
+    "vue": "^3.5.13"
   },
   "devDependencies": {
     "typescript": "^5.8.2",

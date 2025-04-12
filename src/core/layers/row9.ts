@@ -1,9 +1,10 @@
 import Decimal from "break_eternity.js";
-import {player} from "save/save.js";
-import {Layer} from "./layer.js";
+import { player } from "core/save/save.js";
+import { Layer } from "./layer-logic/layer.js";
 
 const hyperPointsLayer = new Layer(true, "HP", {
   layerName: "Hyper Points",
+  currencyName: "Hyper Points",
   layerSymbol: "HP",
   nodePosition: 0,
   nodeColor: "#D4FCFa",
@@ -38,6 +39,9 @@ const hyperPointsLayer = new Layer(true, "HP", {
     return keep;
   },
   resetsNothing: () => false,
+  disabledOnCondition() {
+    return true;
+  },
 });
 
 export const row9Layers = {

@@ -1,20 +1,20 @@
 import type Decimal from "break_eternity.js";
-import { Layers } from "layers/layer";
-import { player } from "save/save";
+import { Layers } from "@/core/layers/index.js";
+import { player } from "@/core/save/save.js";
 
-export function hasUpgrade(layer: string, id: string): boolean {
+export function hasUpgrade(layer: string, id: number): boolean {
   return (player[layer].upgrades.includes(id) && !Layers.isDisabled(layer));
 }
 
-export function hasMilestone(layer: string, id: string): boolean {
+export function hasMilestone(layer: string, id: number): boolean {
   return (player[layer].milestones.includes(id) && !Layers.isDisabled(layer));
 }
 
-export function hasAchievement(layer: string, id: string): boolean {
+export function hasAchievement(layer: string, id: number): boolean {
   return (player[layer].achievements.includes(id) && !Layers.isDisabled(layer));
 }
 
-export function hasChallenge(layer: string, id: string): boolean {
+export function hasChallenge(layer: string, id: number): boolean {
   return ((player[layer].challenges[id]) && !Layers.isDisabled(layer));
 }
 
@@ -42,7 +42,7 @@ function setBuyableAmount(layer: string, id: string, amt: Decimal): void {
   player[layer].buyables[id] = amt;
 }
 
-function addBuyables(layer: string, id, amt): void {
+function addBuyables(layer: string, id: string | number, amt: unknown): void {
   player[layer].buyables[id] = player[layer].buyables[id].add(amt);
 }
 
@@ -50,7 +50,7 @@ function getClickableState(layer: string, id: string): unknown {
   return (player[layer].clickables[id]);
 }
 
-function setClickableState(layer: string, id, state): void {
+function setClickableState(layer: string, id: string | number, state: unknown): void {
   player[layer].clickables[id] = state;
 }
 
@@ -58,7 +58,7 @@ function getGridData(layer: string, id: string): unknown {
   return (player[layer].grid[id]);
 }
 
-function setGridData(layer: string, id, data): void {
+function setGridData(layer: string, id: string | number, data: unknown): void {
   player[layer].grid[id] = data;
 }
 

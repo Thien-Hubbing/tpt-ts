@@ -20,11 +20,11 @@ export enum ScalingTypes {
 }
 
 export function softcap(parameters: {
-  BaseResource: Decimal;
-  SoftcapStart: DecimalSource;
-  SoftcapPower: DecimalSource;
-  SoftcapType: SoftcapModes;
-  IsDisabled?: boolean;
+  BaseResource: Decimal
+  SoftcapStart: DecimalSource
+  SoftcapPower: DecimalSource
+  SoftcapType: SoftcapModes
+  IsDisabled?: boolean
 }): Decimal {
   const start = new Decimal(parameters.SoftcapStart);
   const power = new Decimal(parameters.SoftcapPower);
@@ -64,11 +64,11 @@ export function softcap(parameters: {
 }
 
 export function scale(parameters: {
-  BaseResource: Decimal;
-  ScaleStart: DecimalSource;
-  ScalePower: DecimalSource;
-  ScaleMode: ScalingTypes;
-  IsInverted: boolean;
+  BaseResource: Decimal
+  ScaleStart: DecimalSource
+  ScalePower: DecimalSource
+  ScaleMode: ScalingTypes
+  IsInverted: boolean
 }): Decimal {
   const start = new Decimal(parameters.ScaleStart);
   const power = new Decimal(parameters.ScalePower);

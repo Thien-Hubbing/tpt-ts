@@ -1,7 +1,7 @@
 // Deepmerge library with Decimal intergration (from Antimatter Dimensions source code)
 // Source: https://github.com/TehShrike/deepmerge
 
-import Decimal from 'break_eternity.js';
+import Decimal from "break_eternity.js";
 
 function emptyTarget(value) {
   return Array.isArray(value) ? [] : {};
@@ -22,7 +22,7 @@ function cloneUnlessOtherwiseSpecified(value, options) {
 }
 
 function defaultArrayMerge(target, source, options) {
-  return target.concat(source).map(element => cloneUnlessOtherwiseSpecified(element, options));
+  return [...target, ...(Array.isArray(source) ? source : [source])].map(element => cloneUnlessOtherwiseSpecified(element, options));
 }
 
 function mergeObject(target, source, options) {
@@ -77,7 +77,7 @@ export function deepmerge(target, source, options = {}) {
 
 export function deepmergeAll(array, options) {
   if (!Array.isArray(array)) {
-    throw new TypeError('first argument should be an array');
+    throw new TypeError("first argument should be an array");
   }
 
   if (!options) {
@@ -109,10 +109,10 @@ function isMergeableObject(value) {
 }
 
 function isNonNullObject(value) {
-  return Boolean(value) && typeof value === 'object';
+  return Boolean(value) && typeof value === "object";
 }
 
 function isSpecial(value) {
   const stringValue = Object.prototype.toString.call(value);
-  return stringValue === '[object RegExp]' || stringValue === '[object Date]';
+  return stringValue === "[object RegExp]" || stringValue === "[object Date]";
 }

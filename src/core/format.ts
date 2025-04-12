@@ -190,5 +190,50 @@ export function formatTime(value: DecimalSource, useHMS = true) {
 }
 
 export function formatMult(value: DecimalSource, precision?: number): string {
-  return `×${format(value, precision)}`;
+  return Decimal.lt(value, 1) ? `/${format(value, precision)}` : `×${format(value, precision)}`;
+}
+
+export function formatPow(value: DecimalSource, precision?: number): string {
+  return Decimal.lt(value, 1) ? `√${format(value, precision)}` : `^${format(value, precision)}`;
+}
+
+export function formatAdd(value: DecimalSource, precision?: number): string {
+  if (Decimal.eq(value, 0)) return format(value, precision);
+  else if (Decimal.sign(value) < 0) return `-${format(value, precision)}`;
+  return `+${format(value, precision)}`;
+}
+
+export function formatGain(value: DecimalSource, gain: DecimalSource, precision?: number): string {
+  const next = Decimal.add(value, gain);
+  let ooms = next.max(10).slog(10).div(Decimal.max(gain, 10).slog(10));
+  if (ooms.gte(3)) {
+    return `(+${format(ooms)} OoMs^OoM/sec)`;
+  } else {
+    ooms = next.max(1).log10().max(1).log10().max(1).log10().div(Decimal.max(value, 1).log10().max(1).log10().max(1).log10());
+    if ((ooms.gte(10) && Decimal.gte(value, "eee1e100"))
+      || (ooms.gte(1.1220184543019633) && Decimal.gte(value, "eee1e1000"))) {
+      ooms = ooms.log10().mul(20);
+      return `(+${format(ooms)} OoMs^4/sec)`;
+    }
+
+    ooms = next.max(1).log10().max(1).log10().div(Decimal.max(value, 1).log10().max(1).log10());
+    if ((ooms.gte(10) && Decimal.gte(value, "ee1e100"))
+      || (ooms.gte(1.1220184543019633) && Decimal.gte(value, "ee1e1000"))) {
+      ooms = ooms.log10().mul(20);
+      return `(+${format(ooms)} OoMs^3/sec)`;
+    }
+
+    ooms = next.max(1).log10().div(Decimal.max(value, 1).log10());
+    if ((ooms.gte(10) && Decimal.gte(value, "e1e100"))
+      || (ooms.gte(1.1220184543019633) && Decimal.gte(value, "e1e1000"))) {
+      ooms = ooms.log10().mul(20);
+      return `(+${format(ooms)} OoMs^2/sec)`;
+    }
+
+    ooms = next.div(value);
+    if ((ooms.gte(10) && Decimal.gte(value, "1e100")) || ooms.gte(50)) {
+      return `(+${format(ooms.log10().mul(20))} OoMs/sec)`;
+    }
+  }
+  return `(+${format(gain)}/sec)`;
 }

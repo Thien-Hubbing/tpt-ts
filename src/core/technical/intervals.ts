@@ -1,8 +1,14 @@
-import { player } from "save/save";
+import { player } from "core/save/save";
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const Intervals = (function() {
-  const interval = (handler: () => void, timeout: number | (() => number)) => {
+export type GameInterval = {
+  readonly isStarted: boolean
+  start(): void
+  stop(): void
+  restart(): void
+};
+
+export const Intervals = (function () {
+  const interval = (handler: () => void, timeout: number | (() => number)): GameInterval => {
     let id: NodeJS.Timeout | undefined;
     return {
       start() {
@@ -31,30 +37,33 @@ export const Intervals = (function() {
   };
 
   return {
-    // Not a getter because getter will cause stack overflow
-    all(): any {
-      return Object.values(Intervals)
-        .filter(i =>
-          Object.hasOwn(i, "start")
-          && Object.hasOwn(i, "stop"),
-        );
+    get all(): GameInterval[] {
+      return Intervals.intervalsArray;
     },
     startAll() {
-      for (const interval of this.all()) {
+      for (const interval of this.all) {
         interval.start();
       }
     },
     stopAll() {
-      for (const interval of this.all()) {
+      for (const interval of this.all) {
         interval.stop();
       }
     },
     resetAll() {
-      for (const interval of this.all()) {
+      for (const interval of this.all) {
         interval.restart();
       }
     },
-    gameLoop: interval(() => realGameLoop(), 33),
-    save: interval(() => GameSave.save(), 30 * 1000),
+    intervalsArray: [
+      interval(() => realGameLoop(), 33),
+      interval(() => GameSave.save(), 30 * 1000),
+    ],
+    get gameLoop() {
+      return this.intervalsArray[0];
+    },
+    get autosaveLoop() {
+      return this.intervalsArray[1];
+    },
   };
 })();
